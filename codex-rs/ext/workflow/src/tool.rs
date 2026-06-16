@@ -48,7 +48,7 @@ impl ToolExecutor<ToolCall> for WorkflowTool {
     fn spec(&self) -> ToolSpec {
         ToolSpec::Function(ResponsesApiTool {
             name: prompt::WORKFLOW_TOOL_NAME.to_string(),
-            description: prompt::TOOL_DESCRIPTION.to_string(),
+            description: prompt::developer_prompt_fragment(),
             strict: false,
             defer_loading: None,
             parameters: parse_tool_input_schema_without_compaction(&workflow_tool_schema())
