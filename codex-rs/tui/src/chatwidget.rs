@@ -118,6 +118,8 @@ use codex_app_server_protocol::TurnCompletedNotification;
 use codex_app_server_protocol::TurnPlanStepStatus;
 use codex_app_server_protocol::TurnStatus;
 use codex_app_server_protocol::UserInput;
+use codex_app_server_protocol::WorkflowRunStatus;
+use codex_app_server_protocol::WorkflowRunUpdatedNotification;
 use codex_config::ConfigLayerStackOrdering;
 use codex_config::Constrained;
 use codex_config::ConstraintResult;
@@ -305,6 +307,7 @@ use crate::history_cell::McpInvocation;
 use crate::history_cell::McpToolCallCell;
 use crate::history_cell::PlainHistoryCell;
 use crate::history_cell::WebSearchCell;
+use crate::history_cell::WorkflowRunCell;
 use crate::key_hint;
 use crate::key_hint::KeyBinding;
 use crate::key_hint::KeyBindingListExt;
@@ -416,6 +419,8 @@ mod turn_lifecycle;
 mod turn_runtime;
 use self::turn_lifecycle::TurnLifecycleState;
 mod user_messages;
+mod workflow_lifecycle;
+mod workflow_popup;
 use self::user_messages::PendingSteer;
 use self::user_messages::PendingSteerCompareKey;
 use self::user_messages::QueueDrain;
@@ -615,6 +620,8 @@ pub(crate) struct ChatWidget {
     review: ReviewState,
     // Active hook runs render in a dedicated live cell so they can run alongside tools.
     active_hook_cell: Option<HookCell>,
+    latest_workflow_run: Option<WorkflowRunUpdatedNotification>,
+    workflow_popup_phase: Option<String>,
     // Ambient companion rendered over the transcript area, never inside the footer rows.
     ambient_pet: Option<crate::pets::AmbientPet>,
     pet_picker_preview_state: crate::pets::PetPickerPreviewState,
@@ -1391,6 +1398,8 @@ impl ChatWidget {
                 exec.mark_failed();
             } else if let Some(tool) = cell.as_any_mut().downcast_mut::<McpToolCallCell>() {
                 tool.mark_failed();
+            } else if let Some(workflow) = cell.as_any_mut().downcast_mut::<WorkflowRunCell>() {
+                workflow.mark_failed();
             }
             self.add_boxed_history(cell);
             self.request_completed_token_activity_output_insertion();

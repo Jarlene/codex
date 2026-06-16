@@ -40,6 +40,7 @@ pub enum SlashCommand {
     Compact,
     Plan,
     Goal,
+    Workflow,
     Agent,
     Side,
     Btw,
@@ -120,6 +121,7 @@ impl SlashCommand {
             SlashCommand::Personality => "choose a communication style for Codex",
             SlashCommand::Plan => "switch to Plan mode",
             SlashCommand::Goal => "set or view the goal for a long-running task",
+            SlashCommand::Workflow => "view running workflow phases and agents",
             SlashCommand::Agent | SlashCommand::MultiAgents => "switch the active agent thread",
             SlashCommand::Side | SlashCommand::Btw => {
                 "start a side conversation in an ephemeral fork"
@@ -224,6 +226,7 @@ impl SlashCommand {
             | SlashCommand::Stop
             | SlashCommand::App
             | SlashCommand::Goal
+            | SlashCommand::Workflow
             | SlashCommand::Mcp
             | SlashCommand::Apps
             | SlashCommand::Plugins

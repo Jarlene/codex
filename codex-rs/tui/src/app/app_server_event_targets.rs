@@ -103,6 +103,9 @@ pub(super) fn server_notification_thread_target(
         ServerNotification::ServerRequestResolved(notification) => {
             Some(notification.thread_id.as_str())
         }
+        ServerNotification::WorkflowRunUpdated(notification) => {
+            Some(notification.thread_id.as_str())
+        }
         ServerNotification::McpToolCallProgress(notification) => {
             Some(notification.thread_id.as_str())
         }
@@ -197,6 +200,8 @@ mod tests {
     use codex_app_server_protocol::ThreadSettings;
     use codex_app_server_protocol::ThreadSettingsUpdatedNotification;
     use codex_app_server_protocol::WarningNotification;
+    use codex_app_server_protocol::WorkflowRunStatus;
+    use codex_app_server_protocol::WorkflowRunUpdatedNotification;
     use codex_protocol::ThreadId;
     use codex_protocol::config_types::CollaborationMode;
     use codex_protocol::config_types::ModeKind;
@@ -307,6 +312,33 @@ mod tests {
                 thread_id: thread_id.to_string(),
                 thread_settings: test_thread_settings(),
             });
+
+        let target = server_notification_thread_target(&notification);
+
+        assert_eq!(target, ServerNotificationThreadTarget::Thread(thread_id));
+    }
+
+    #[test]
+    fn workflow_run_updated_notifications_route_to_threads() {
+        let thread_id = ThreadId::new();
+        let notification = ServerNotification::WorkflowRunUpdated(WorkflowRunUpdatedNotification {
+            thread_id: thread_id.to_string(),
+            turn_id: "turn-1".to_string(),
+            call_id: "call-1".to_string(),
+            workflow_name: "workflow".to_string(),
+            workflow_description: "description".to_string(),
+            status: WorkflowRunStatus::Running,
+            phases: Vec::new(),
+            agents: Vec::new(),
+            logs: Vec::new(),
+            agent_count: 0,
+            running_agent_count: 0,
+            completed_agent_count: 0,
+            failed_agent_count: 0,
+            started_at_ms: 1,
+            updated_at_ms: 1,
+            completed_at_ms: None,
+        });
 
         let target = server_notification_thread_target(&notification);
 

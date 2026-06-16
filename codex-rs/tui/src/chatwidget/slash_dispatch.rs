@@ -285,6 +285,9 @@ impl ChatWidget {
                     );
                 }
             }
+            SlashCommand::Workflow => {
+                self.open_workflow_popup();
+            }
             SlashCommand::Side | SlashCommand::Btw => {
                 self.request_empty_side_conversation(cmd);
             }
@@ -1063,6 +1066,7 @@ impl ChatWidget {
             | SlashCommand::Personality
             | SlashCommand::Plan
             | SlashCommand::Goal
+            | SlashCommand::Workflow
             | SlashCommand::Side
             | SlashCommand::Btw
             | SlashCommand::Keymap

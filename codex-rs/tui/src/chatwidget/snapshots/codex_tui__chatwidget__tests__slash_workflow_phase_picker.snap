@@ -1,0 +1,26 @@
+---
+source: tui/src/chatwidget/tests/app_server.rs
+assertion_line: 1173
+expression: phases_popup
+---
+• Running workflow repo_review
+  └ 3 agent(s): 1 running, 1 done, 1 failed
+  ├ Phase: Inspect (1/2 done, 1 running, 0 failed)
+  │   done source map · explore · gpt-5.4-mini
+  │     Map the repository modules and important entry points.
+  │   running protocol scan
+  │     Inspect app-server protocol changes.
+  ├ Phase: Synthesize (0/1 done, 0 running, 1 failed)
+  │   failed final synthesis · writer · gpt-5.4
+  │     error: schema validation failed
+  ├ Logs
+  │   phase Inspect started
+
+
+  Workflow: repo_review
+  running · 3 agent(s): 1 running, 1 done, 1 failed
+
+› 1. Inspect     2 agent(s): 1 running, 1 done, 0 failed. Press Enter to inspect agents.
+  2. Synthesize  1 agent(s): 0 running, 0 done, 1 failed
+
+  enter agents · esc close

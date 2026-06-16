@@ -2019,6 +2019,7 @@ dependencies = [
  "codex-utils-pty",
  "codex-web-search-extension",
  "codex-windows-sandbox",
+ "codex-workflow-extension",
  "core_test_support",
  "flate2",
  "futures",
@@ -4400,6 +4401,22 @@ dependencies = [
  "tracing-appender",
  "windows 0.58.0",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "codex-workflow-extension"
+version = "0.0.0"
+dependencies = [
+ "codex-core",
+ "codex-extension-api",
+ "codex-protocol",
+ "codex-tools",
+ "codex-utils-absolute-path",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]

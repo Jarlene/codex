@@ -156,6 +156,7 @@ pub fn should_persist_event_msg(ev: &EventMsg) -> bool {
         | EventMsg::CollabAgentInteractionBegin(_)
         | EventMsg::CollabWaitingBegin(_)
         | EventMsg::CollabCloseBegin(_)
+        | EventMsg::WorkflowRunUpdated(_)
         | EventMsg::CollabResumeBegin(_) => false,
     }
 }

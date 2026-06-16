@@ -10,6 +10,11 @@ use crate::session_state::ThreadSessionState;
 use crate::wrapping::word_wrap_lines;
 use codex_app_server_protocol::AskForApproval;
 use codex_app_server_protocol::McpAuthStatus;
+use codex_app_server_protocol::WorkflowAgentProgress;
+use codex_app_server_protocol::WorkflowAgentStatus;
+use codex_app_server_protocol::WorkflowPhaseProgress;
+use codex_app_server_protocol::WorkflowRunStatus;
+use codex_app_server_protocol::WorkflowRunUpdatedNotification;
 use codex_config::types::McpServerConfig;
 use codex_otel::RuntimeMetricTotals;
 use codex_otel::RuntimeMetricsSummary;
@@ -196,6 +201,87 @@ fn resource_link_block(
         meta: None,
     }))
     .expect("resource link content should serialize")
+}
+
+fn workflow_notification(status: WorkflowRunStatus) -> WorkflowRunUpdatedNotification {
+    WorkflowRunUpdatedNotification {
+        thread_id: "thread-1".to_string(),
+        turn_id: "turn-1".to_string(),
+        call_id: "call-workflow".to_string(),
+        workflow_name: "repo_review".to_string(),
+        workflow_description: "Review the repository".to_string(),
+        status,
+        phases: vec![
+            WorkflowPhaseProgress {
+                title: "Inspect".to_string(),
+                agent_count: 2,
+                running_agent_count: u32::from(matches!(status, WorkflowRunStatus::Running)),
+                completed_agent_count: 1,
+                failed_agent_count: 0,
+            },
+            WorkflowPhaseProgress {
+                title: "Synthesize".to_string(),
+                agent_count: 1,
+                running_agent_count: 0,
+                completed_agent_count: 0,
+                failed_agent_count: 1,
+            },
+        ],
+        agents: vec![
+            WorkflowAgentProgress {
+                id: "agent-1".to_string(),
+                label: "source map".to_string(),
+                prompt: "Map the repository modules and important entry points.".to_string(),
+                phase: Some("Inspect".to_string()),
+                status: WorkflowAgentStatus::Completed,
+                started_at_ms: 1,
+                completed_at_ms: Some(2),
+                error: None,
+                model: Some("gpt-5.4-mini".to_string()),
+                agent_type: Some("explore".to_string()),
+            },
+            WorkflowAgentProgress {
+                id: "agent-2".to_string(),
+                label: "protocol scan".to_string(),
+                prompt: "Inspect app-server protocol changes.".to_string(),
+                phase: Some("Inspect".to_string()),
+                status: if matches!(status, WorkflowRunStatus::Running) {
+                    WorkflowAgentStatus::Running
+                } else {
+                    WorkflowAgentStatus::Completed
+                },
+                started_at_ms: 3,
+                completed_at_ms: (!matches!(status, WorkflowRunStatus::Running)).then_some(4),
+                error: None,
+                model: None,
+                agent_type: None,
+            },
+            WorkflowAgentProgress {
+                id: "agent-3".to_string(),
+                label: "final synthesis".to_string(),
+                prompt: "Combine findings into a compact result.".to_string(),
+                phase: Some("Synthesize".to_string()),
+                status: WorkflowAgentStatus::Failed,
+                started_at_ms: 5,
+                completed_at_ms: Some(6),
+                error: Some("schema validation failed".to_string()),
+                model: Some("gpt-5.4".to_string()),
+                agent_type: Some("writer".to_string()),
+            },
+        ],
+        logs: vec!["phase Inspect started".to_string()],
+        agent_count: 3,
+        running_agent_count: u32::from(matches!(status, WorkflowRunStatus::Running)),
+        completed_agent_count: if matches!(status, WorkflowRunStatus::Running) {
+            1
+        } else {
+            2
+        },
+        failed_agent_count: 1,
+        started_at_ms: 1,
+        updated_at_ms: 6,
+        completed_at_ms: (!matches!(status, WorkflowRunStatus::Running)).then_some(6),
+    }
 }
 
 #[test]
@@ -487,6 +573,18 @@ fn image_generation_call_renders_saved_path() {
             expected_saved_path,
         ],
     );
+}
+
+#[test]
+fn workflow_run_cell_renders_phases_and_agents() {
+    let cell = new_workflow_run_cell(
+        workflow_notification(WorkflowRunStatus::Running),
+        /*animations_enabled*/ false,
+    );
+
+    let rendered = render_lines(&cell.display_lines(/*width*/ 80)).join("\n");
+
+    insta::assert_snapshot!(rendered);
 }
 
 fn session_configured_event(model: &str) -> ThreadSessionState {

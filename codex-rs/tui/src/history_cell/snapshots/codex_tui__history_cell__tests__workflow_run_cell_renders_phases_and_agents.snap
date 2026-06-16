@@ -1,0 +1,17 @@
+---
+source: tui/src/history_cell/tests.rs
+assertion_line: 587
+expression: rendered
+---
+• Running workflow repo_review
+  └ 3 agent(s): 1 running, 1 done, 1 failed
+  ├ Phase: Inspect (1/2 done, 1 running, 0 failed)
+  │   done source map · explore · gpt-5.4-mini
+  │     Map the repository modules and important entry points.
+  │   running protocol scan
+  │     Inspect app-server protocol changes.
+  ├ Phase: Synthesize (0/1 done, 0 running, 1 failed)
+  │   failed final synthesis · writer · gpt-5.4
+  │     error: schema validation failed
+  ├ Logs
+  │   phase Inspect started
