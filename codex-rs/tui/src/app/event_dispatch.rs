@@ -719,6 +719,10 @@ impl App {
             AppEvent::OpenThreadGoalMenu { thread_id } => {
                 self.open_thread_goal_menu(app_server, thread_id).await;
             }
+            AppEvent::OpenWorkflowPhaseAgents { phase_title } => {
+                self.chat_widget.open_workflow_phase_agents(&phase_title);
+                tui.frame_requester().schedule_frame();
+            }
             AppEvent::OpenThreadGoalEditor { thread_id } => {
                 self.open_thread_goal_editor(app_server, thread_id).await;
             }

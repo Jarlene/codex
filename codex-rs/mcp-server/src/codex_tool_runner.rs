@@ -380,6 +380,7 @@ async fn run_codex_tool_session_inner(
                     | EventMsg::CollabWaitingEnd(_)
                     | EventMsg::CollabCloseBegin(_)
                     | EventMsg::CollabCloseEnd(_)
+                    | EventMsg::WorkflowRunUpdated(_)
                     | EventMsg::CollabResumeBegin(_)
                     | EventMsg::CollabResumeEnd(_)
                     | EventMsg::SubAgentActivity(_)

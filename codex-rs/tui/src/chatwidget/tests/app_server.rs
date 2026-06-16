@@ -1048,3 +1048,138 @@ async fn live_app_server_thread_closed_requests_immediate_exit() {
 
     assert_matches!(rx.try_recv(), Ok(AppEvent::Exit(ExitMode::Immediate)));
 }
+
+fn workflow_notification(status: WorkflowRunStatus) -> WorkflowRunUpdatedNotification {
+    let running = matches!(status, WorkflowRunStatus::Running);
+    WorkflowRunUpdatedNotification {
+        thread_id: "thread-1".to_string(),
+        turn_id: "turn-1".to_string(),
+        call_id: "call-workflow".to_string(),
+        workflow_name: "repo_review".to_string(),
+        workflow_description: "Review the repository".to_string(),
+        status,
+        phases: vec![
+            WorkflowPhaseProgress {
+                title: "Inspect".to_string(),
+                agent_count: 2,
+                running_agent_count: u32::from(running),
+                completed_agent_count: if running { 1 } else { 2 },
+                failed_agent_count: 0,
+            },
+            WorkflowPhaseProgress {
+                title: "Synthesize".to_string(),
+                agent_count: 1,
+                running_agent_count: 0,
+                completed_agent_count: 0,
+                failed_agent_count: 1,
+            },
+        ],
+        agents: vec![
+            WorkflowAgentProgress {
+                id: "agent-1".to_string(),
+                label: "source map".to_string(),
+                prompt: "Map the repository modules and important entry points.".to_string(),
+                phase: Some("Inspect".to_string()),
+                status: WorkflowAgentStatus::Completed,
+                started_at_ms: 1,
+                completed_at_ms: Some(2),
+                error: None,
+                model: Some("gpt-5.4-mini".to_string()),
+                agent_type: Some("explore".to_string()),
+            },
+            WorkflowAgentProgress {
+                id: "agent-2".to_string(),
+                label: "protocol scan".to_string(),
+                prompt: "Inspect app-server protocol changes.".to_string(),
+                phase: Some("Inspect".to_string()),
+                status: if running {
+                    WorkflowAgentStatus::Running
+                } else {
+                    WorkflowAgentStatus::Completed
+                },
+                started_at_ms: 3,
+                completed_at_ms: (!running).then_some(4),
+                error: None,
+                model: None,
+                agent_type: None,
+            },
+            WorkflowAgentProgress {
+                id: "agent-3".to_string(),
+                label: "final synthesis".to_string(),
+                prompt: "Combine findings into a compact result.".to_string(),
+                phase: Some("Synthesize".to_string()),
+                status: WorkflowAgentStatus::Failed,
+                started_at_ms: 5,
+                completed_at_ms: Some(6),
+                error: Some("schema validation failed".to_string()),
+                model: Some("gpt-5.4".to_string()),
+                agent_type: Some("writer".to_string()),
+            },
+        ],
+        logs: vec!["phase Inspect started".to_string()],
+        agent_count: 3,
+        running_agent_count: u32::from(running),
+        completed_agent_count: if running { 1 } else { 2 },
+        failed_agent_count: 1,
+        started_at_ms: 1,
+        updated_at_ms: 6,
+        completed_at_ms: (!running).then_some(6),
+    }
+}
+
+#[tokio::test]
+async fn workflow_run_updates_render_active_cell_and_finalize_on_completion() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.handle_server_notification(
+        ServerNotification::WorkflowRunUpdated(workflow_notification(WorkflowRunStatus::Running)),
+        /*replay_kind*/ None,
+    );
+
+    let active = active_blob(&chat);
+    assert!(active.contains("Running workflow repo_review"));
+    assert!(active.contains("Phase: Inspect"));
+    assert!(active.contains("source map"));
+    assert!(active.contains("protocol scan"));
+    assert!(drain_insert_history(&mut rx).is_empty());
+
+    chat.handle_server_notification(
+        ServerNotification::WorkflowRunUpdated(workflow_notification(WorkflowRunStatus::Completed)),
+        /*replay_kind*/ None,
+    );
+
+    assert!(chat.transcript.active_cell.is_none());
+    let cells = drain_insert_history(&mut rx);
+    assert_eq!(cells.len(), 1);
+    let rendered = lines_to_single_string(&cells[0]);
+    assert!(rendered.contains("Completed workflow repo_review"));
+    assert!(rendered.contains("3 agent(s): 0 running, 2 done, 1 failed"));
+    assert!(rendered.contains("Phase: Synthesize"));
+    assert!(rendered.contains("error: schema validation failed"));
+}
+
+#[tokio::test]
+async fn slash_workflow_opens_phase_picker_and_agent_details() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.handle_server_notification(
+        ServerNotification::WorkflowRunUpdated(workflow_notification(WorkflowRunStatus::Running)),
+        /*replay_kind*/ None,
+    );
+    assert!(drain_insert_history(&mut rx).is_empty());
+
+    chat.dispatch_command(SlashCommand::Workflow);
+    let phases_popup = render_bottom_popup(&chat, /*width*/ 96);
+    assert_chatwidget_snapshot!("slash_workflow_phase_picker", phases_popup);
+
+    chat.handle_key_event(KeyEvent::from(KeyCode::Enter));
+    let phase_title = match rx.try_recv() {
+        Ok(AppEvent::OpenWorkflowPhaseAgents { phase_title }) => phase_title,
+        other => panic!("expected workflow phase event, got {other:?}"),
+    };
+    assert_eq!(phase_title, "Inspect");
+
+    chat.open_workflow_phase_agents(&phase_title);
+    let agents_popup = render_bottom_popup(&chat, /*width*/ 104);
+    assert_chatwidget_snapshot!("slash_workflow_agent_details", agents_popup);
+}

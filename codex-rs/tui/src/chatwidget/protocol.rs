@@ -188,6 +188,9 @@ impl ChatWidget {
                     self.on_shutdown_complete();
                 }
             }
+            ServerNotification::WorkflowRunUpdated(notification) => {
+                self.on_workflow_run_updated(notification);
+            }
             ServerNotification::ServerRequestResolved(_)
             | ServerNotification::AccountUpdated(_)
             | ServerNotification::AccountRateLimitsUpdated(_)

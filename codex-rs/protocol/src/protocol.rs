@@ -1326,6 +1326,8 @@ pub enum EventMsg {
 
     DynamicToolCallResponse(DynamicToolCallResponseEvent),
 
+    WorkflowRunUpdated(WorkflowRunUpdatedEvent),
+
     ElicitationRequest(ElicitationRequestEvent),
 
     ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent),
@@ -2363,6 +2365,67 @@ pub struct DynamicToolCallResponseEvent {
     /// The duration of the dynamic tool call.
     #[ts(type = "string")]
     pub duration: Duration,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(rename_all = "snake_case")]
+pub enum WorkflowRunStatus {
+    Running,
+    Completed,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(rename_all = "snake_case")]
+pub enum WorkflowAgentStatus {
+    Running,
+    Completed,
+    Failed,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]
+pub struct WorkflowPhaseProgress {
+    pub title: String,
+    pub agent_count: u32,
+    pub running_agent_count: u32,
+    pub completed_agent_count: u32,
+    pub failed_agent_count: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]
+pub struct WorkflowAgentProgress {
+    pub id: String,
+    pub label: String,
+    pub prompt: String,
+    pub phase: Option<String>,
+    pub status: WorkflowAgentStatus,
+    pub started_at_ms: i64,
+    pub completed_at_ms: Option<i64>,
+    pub error: Option<String>,
+    pub model: Option<String>,
+    pub agent_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]
+pub struct WorkflowRunUpdatedEvent {
+    pub thread_id: ThreadId,
+    pub turn_id: String,
+    pub call_id: String,
+    pub workflow_name: String,
+    pub workflow_description: String,
+    pub status: WorkflowRunStatus,
+    pub phases: Vec<WorkflowPhaseProgress>,
+    pub agents: Vec<WorkflowAgentProgress>,
+    pub logs: Vec<String>,
+    pub agent_count: u32,
+    pub running_agent_count: u32,
+    pub completed_agent_count: u32,
+    pub failed_agent_count: u32,
+    pub started_at_ms: i64,
+    pub updated_at_ms: i64,
+    pub completed_at_ms: Option<i64>,
 }
 
 impl McpToolCallEndEvent {

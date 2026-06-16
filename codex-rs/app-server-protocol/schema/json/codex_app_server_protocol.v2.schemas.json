@@ -12985,6 +12985,26 @@
           "properties": {
             "method": {
               "enum": [
+                "workflow/run/updated"
+              ],
+              "title": "Workflow/run/updatedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/WorkflowRunUpdatedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "Workflow/run/updatedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
                 "item/mcpToolCall/progress"
               ],
               "title": "Item/mcpToolCall/progressNotificationMethod",
@@ -18174,6 +18194,211 @@
         "samplePaths"
       ],
       "title": "WindowsWorldWritableWarningNotification",
+      "type": "object"
+    },
+    "WorkflowAgentProgress": {
+      "properties": {
+        "agentType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "completedAtMs": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "startedAtMs": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/WorkflowAgentStatus"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "prompt",
+        "startedAtMs",
+        "status"
+      ],
+      "type": "object"
+    },
+    "WorkflowAgentStatus": {
+      "enum": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "WorkflowPhaseProgress": {
+      "properties": {
+        "agentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "completedAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "failedAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "runningAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "agentCount",
+        "completedAgentCount",
+        "failedAgentCount",
+        "runningAgentCount",
+        "title"
+      ],
+      "type": "object"
+    },
+    "WorkflowRunStatus": {
+      "enum": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "WorkflowRunUpdatedNotification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "agentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "agents": {
+          "items": {
+            "$ref": "#/definitions/WorkflowAgentProgress"
+          },
+          "type": "array"
+        },
+        "callId": {
+          "type": "string"
+        },
+        "completedAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "completedAtMs": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "failedAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "logs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "phases": {
+          "items": {
+            "$ref": "#/definitions/WorkflowPhaseProgress"
+          },
+          "type": "array"
+        },
+        "runningAgentCount": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "startedAtMs": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/WorkflowRunStatus"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "turnId": {
+          "type": "string"
+        },
+        "updatedAtMs": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "workflowDescription": {
+          "type": "string"
+        },
+        "workflowName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "agentCount",
+        "agents",
+        "callId",
+        "completedAgentCount",
+        "failedAgentCount",
+        "logs",
+        "phases",
+        "runningAgentCount",
+        "startedAtMs",
+        "status",
+        "threadId",
+        "turnId",
+        "updatedAtMs",
+        "workflowDescription",
+        "workflowName"
+      ],
+      "title": "WorkflowRunUpdatedNotification",
       "type": "object"
     },
     "WriteStatus": {

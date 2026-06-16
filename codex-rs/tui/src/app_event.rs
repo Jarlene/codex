@@ -273,6 +273,11 @@ pub(crate) enum AppEvent {
         thread_id: ThreadId,
     },
 
+    /// Open the agent list for a workflow phase in the active thread.
+    OpenWorkflowPhaseAgents {
+        phase_title: String,
+    },
+
     /// Open an editor for the current thread goal objective.
     OpenThreadGoalEditor {
         thread_id: Option<ThreadId>,
