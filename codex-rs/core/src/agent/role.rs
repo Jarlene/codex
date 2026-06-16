@@ -373,9 +373,25 @@ Rules:
     pub(super) fn config_file_contents(path: &Path) -> Option<&'static str> {
         const EXPLORER: &str = include_str!("builtins/explorer.toml");
         const AWAITER: &str = include_str!("builtins/awaiter.toml");
+        const REQUIREMENT: &str = include_str!("builtins/requirement.toml");
+        const CODER: &str = include_str!("builtins/coder.toml");
+        const CRITIQUER: &str = include_str!("builtins/critiquer.toml");
+        const PLANNER: &str = include_str!("builtins/planner.toml");
+        const RESEARCHER: &str = include_str!("builtins/researcher.toml");
+        const TESTER: &str = include_str!("builtins/tester.toml");
+        const REVIEWER: &str = include_str!("builtins/reviewer.toml");
+        const ARCHITECT: &str = include_str!("builtins/architect.toml");
         match path.to_str()? {
             "explorer.toml" => Some(EXPLORER),
             "awaiter.toml" => Some(AWAITER),
+            "requirement.toml" => Some(REQUIREMENT),
+            "coder.toml" => Some(CODER),
+            "critiquer.toml" => Some(CRITIQUER),
+            "planner.toml" => Some(PLANNER),
+            "researcher.toml" => Some(RESEARCHER),
+            "tester.toml" => Some(TESTER),
+            "reviewer.toml" => Some(REVIEWER),
+            "architect.toml" => Some(ARCHITECT),
             _ => None,
         }
     }

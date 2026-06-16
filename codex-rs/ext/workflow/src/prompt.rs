@@ -2,7 +2,25 @@ pub(crate) const WORKFLOW_TOOL_NAME: &str = "workflow";
 
 pub(crate) const TOOL_DESCRIPTION: &str = "Execute a deterministic Rust workflow script that orchestrates multiple subagents with agent(), parallel(), and pipeline(). The script is required raw text and must start with workflow! { meta: { name, description } ... }. It must call agent() at least once; phases are optional metadata.";
 
-pub(crate) const PROMPT_SNIPPET: &str = "Run a deterministic Rust workflow. Required script shape: workflow! { meta: { name: \"short_snake_case\", description: \"non-empty description\" } ... }. Use phase(title) at runtime to create progress groups.";
+pub(crate) const PROMPT_SNIPPET: &str = "Run a deterministic Rust workflow. Required script shape: workflow! { meta: { name: \"short_snake_case\", description: \"non-empty description\" } ... }. Use phase(title) at runtime to create progress groups.
+## available agent_type
+- **architect**: Software architecture specialist for system design, scalability, and technical decision-making. Use PROACTIVELY when planning new features, refactoring large systems, or making architectural decisions.
+  *Scenario: Designing a microservices migration strategy for a monolithic e-commerce platform handling 100K+ concurrent users.*
+- **coder**: Implementation specialist for writing clean, efficient code.
+  *Scenario: Implementing a thread-safe connection pool with proper resource cleanup and circuit breaker patterns.*
+- **planner**: Expert planning specialist for complex features and refactoring. Use PROACTIVELY when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks.
+  *Scenario: Breaking down a 3-month initiative to replace a legacy payment gateway with a modern event-driven architecture.*
+- **critiquer**: Expert critique specialist for comprehensive multi-perspective review using specialized judges with debate and consensus building.
+  *Scenario: Evaluating a proposed API design by simulating security, scalability, and DX (developer experience) reviewers to surface hidden trade-offs.*
+- **requirement**: Specification phase specialist for requirements analysis.
+  *Scenario: Extracting unambiguous functional and non-functional requirements from stakeholder interviews for a real-time collaboration tool.*
+- **researcher**: Deep research and information gathering specialist.
+  *Scenario: Investigating state-of-the-art code database solutions and benchmarking their recall rates for a enterprise search system.*
+- **reviewer**: Code review and quality assurance specialist.
+  *Scenario: Conducting a line-by-line review of a critical authentication module to ensure OWASP compliance and zero trust principles.*
+- **tester**: Comprehensive testing and quality assurance specialist.
+  *Scenario: Designing a test matrix covering unit, integration, chaos, and load testing for a distributed transaction processing service.*
+";
 
 pub(crate) const PROMPT_GUIDELINES: [&str; 15] = [
     "Use workflow only when the user explicitly asks for a workflow, workflows, fan-out, or multi-agent orchestration.",
