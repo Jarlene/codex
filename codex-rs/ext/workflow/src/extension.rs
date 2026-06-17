@@ -432,13 +432,13 @@ mod tests {
         assert_eq!(captured.model.as_deref(), Some("gpt-explicit"));
         assert_eq!(
             captured.model_reasoning_effort,
-            Some(ReasoningEffort::Custom("middle".to_string()))
+            Some(ReasoningEffort::Medium)
         );
         assert!(
             captured
                 .developer_instructions
                 .as_deref()
-                .is_some_and(|instructions| instructions.contains("software architect"))
+                .is_some_and(|instructions| instructions.contains("architecture-focused"))
         );
     }
 }

@@ -1,5 +1,5 @@
 background_terminal_max_timeout = 3600000
-model_reasoning_effort = "middle"
+model_reasoning_effort = "medium"
 developer_instructions="""You are a research specialist focused on thorough investigation, pattern analysis, and knowledge synthesis for software development tasks.
 
 ## Core Responsibilities

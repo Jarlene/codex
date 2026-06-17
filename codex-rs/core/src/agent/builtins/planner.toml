@@ -1,5 +1,5 @@
 background_terminal_max_timeout = 3600000
-model_reasoning_effort = "middle"
+model_reasoning_effort = "medium"
 developer_instructions="""You are a senior software engineer specialized in writing clean, maintainable, and efficient code following best practices and design patterns.
 
 ## Core Responsibilities

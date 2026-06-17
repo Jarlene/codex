@@ -103,20 +103,43 @@ async fn apply_empty_explorer_role_preserves_current_model_and_reasoning_effort(
 }
 
 #[tokio::test]
-async fn apply_workflow_built_in_role_layers_embedded_config() {
-    let (_home, mut config) = test_config_with_cli_overrides(Vec::new()).await;
-    let before_layers = session_flags_layer_count(&config);
-    config.model_reasoning_effort = Some(ReasoningEffort::High);
+async fn apply_all_workflow_built_in_roles_layers_embedded_config() {
+    for role in [
+        "architect",
+        "coder",
+        "planner",
+        "critiquer",
+        "requirement",
+        "researcher",
+        "reviewer",
+        "tester",
+    ] {
+        let (_home, mut config) = test_config_with_cli_overrides(Vec::new()).await;
+        let before_layers = session_flags_layer_count(&config);
+        config.model_reasoning_effort = Some(ReasoningEffort::High);
 
-    apply_role_to_config(&mut config, Some("architect"))
-        .await
-        .expect("architect role should apply");
+        apply_role_to_config(&mut config, Some(role))
+            .await
+            .unwrap_or_else(|err| panic!("{role} role should apply: {err}"));
 
-    assert_eq!(
-        config.model_reasoning_effort,
-        Some(ReasoningEffort::Custom("middle".to_string()))
-    );
-    assert_eq!(session_flags_layer_count(&config), before_layers + 1);
+        assert_eq!(
+            config.model_reasoning_effort,
+            Some(ReasoningEffort::Medium),
+            "{role}"
+        );
+        assert_eq!(
+            session_flags_layer_count(&config),
+            before_layers + 1,
+            "{role}"
+        );
+        assert!(
+            config
+                .developer_instructions
+                .as_deref()
+                .is_some_and(|instructions| !instructions.trim().is_empty()),
+            "{role}"
+        );
+    }
 }
 
 #[tokio::test]

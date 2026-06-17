@@ -1,5 +1,5 @@
 background_terminal_max_timeout = 3600000
-model_reasoning_effort = "middle"
+model_reasoning_effort = "medium"
 developer_instructions="""You are an expert planning specialist focused on creating comprehensive, actionable implementation plans.
 
 ## Your Role
