@@ -247,7 +247,7 @@ Project Conventions: {any known conventions from codebase}
 Provide specific, actionable feedback with code examples.
 ```
 
-**Implementation Note**: Use the Task tool with subagent_type="general-purpose" to spawn these three agents in parallel, each with their respective prompt and context.
+**Implementation Note**: Use the Task tool with agent_type="default" to spawn these three agents in parallel, each with their respective prompt and context.
 
 ### Phase 3: Cross-Review &amp; Debate
 

@@ -346,6 +346,46 @@ Rules:
                         nickname_candidates: None,
                     }
                 ),
+                built_in_role(
+                    "architect",
+                    "Software architecture specialist for system design and technical decision-making.",
+                    "architect.toml",
+                ),
+                built_in_role(
+                    "coder",
+                    "Implementation specialist for writing clean, efficient code.",
+                    "coder.toml",
+                ),
+                built_in_role(
+                    "planner",
+                    "Planning specialist for complex features and refactoring.",
+                    "planner.toml",
+                ),
+                built_in_role(
+                    "critiquer",
+                    "Critique coordinator for comprehensive multi-perspective review.",
+                    "critiquer.toml",
+                ),
+                built_in_role(
+                    "requirement",
+                    "Requirements analysis specialist for clarifying and decomposing needs.",
+                    "requirement.toml",
+                ),
+                built_in_role(
+                    "researcher",
+                    "Research specialist for thorough investigation and synthesis.",
+                    "researcher.toml",
+                ),
+                built_in_role(
+                    "reviewer",
+                    "Code review specialist for quality, security, and maintainability.",
+                    "reviewer.toml",
+                ),
+                built_in_role(
+                    "tester",
+                    "QA specialist for test design and validation.",
+                    "tester.toml",
+                ),
                 // Awaiter is temp removed
 //                 (
 //                     "awaiter".to_string(),
@@ -367,6 +407,21 @@ Rules:
             ])
         });
         &CONFIG
+    }
+
+    fn built_in_role(
+        name: &str,
+        description: &str,
+        config_file: &str,
+    ) -> (String, AgentRoleConfig) {
+        (
+            name.to_string(),
+            AgentRoleConfig {
+                description: Some(description.to_string()),
+                config_file: Some(config_file.to_string().parse().unwrap_or_default()),
+                nickname_candidates: None,
+            },
+        )
     }
 
     /// Resolves a built-in role `config_file` path to embedded content.

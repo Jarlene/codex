@@ -209,6 +209,6 @@ mod tests {
             panic!("workflow should be a function tool");
         };
         assert_eq!(spec.name, "workflow");
-        assert_eq!(spec.description, prompt::TOOL_DESCRIPTION);
+        assert_eq!(spec.description, prompt::developer_prompt_fragment());
     }
 }
