@@ -2378,13 +2378,21 @@
         "cwd": {
           "anyOf": [
             {
-              "$ref": "#/definitions/v2/AbsolutePathBuf"
+              "$ref": "#/definitions/v2/LegacyAppPathString"
             },
             {
               "type": "null"
             }
           ],
           "description": "The command's working directory."
+        },
+        "environmentId": {
+          "default": null,
+          "description": "Environment in which the command will run.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "itemId": {
           "type": "string"
@@ -6091,7 +6099,7 @@
           "read": {
             "description": "This will be removed in favor of `entries`.",
             "items": {
-              "$ref": "#/definitions/v2/ApiPathString"
+              "$ref": "#/definitions/v2/LegacyAppPathString"
             },
             "type": [
               "array",
@@ -6101,7 +6109,7 @@
           "write": {
             "description": "This will be removed in favor of `entries`.",
             "items": {
-              "$ref": "#/definitions/v2/ApiPathString"
+              "$ref": "#/definitions/v2/LegacyAppPathString"
             },
             "type": [
               "array",
@@ -6212,9 +6220,6 @@
           }
         },
         "type": "object"
-      },
-      "ApiPathString": {
-        "type": "string"
       },
       "AppBranding": {
         "description": "EXPERIMENTAL - app metadata returned by app-list APIs.",
@@ -6713,6 +6718,16 @@
             "anyOf": [
               {
                 "$ref": "#/definitions/v2/ApprovalsReviewer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "default_tools_approval_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/AppToolApproval"
               },
               {
                 "type": "null"
@@ -8712,7 +8727,8 @@
       "ConversationTextRole": {
         "enum": [
           "user",
-          "developer"
+          "developer",
+          "assistant"
         ],
         "type": "string"
       },
@@ -9124,7 +9140,7 @@
             ]
           },
           "includeHome": {
-            "description": "If true, include detection under the user's home (~/.claude, ~/.codex, etc.).",
+            "description": "If true, include detection under the user's home directory.",
             "type": "boolean"
           }
         },
@@ -9287,6 +9303,13 @@
               "$ref": "#/definitions/v2/ExternalAgentConfigMigrationItem"
             },
             "type": "array"
+          },
+          "source": {
+            "description": "Source product that produced the migration items. Missing means unspecified.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -9525,7 +9548,7 @@
           {
             "properties": {
               "path": {
-                "$ref": "#/definitions/v2/ApiPathString"
+                "$ref": "#/definitions/v2/LegacyAppPathString"
               },
               "type": {
                 "enum": [
@@ -11203,6 +11226,9 @@
         ],
         "title": "ItemStartedNotification",
         "type": "object"
+      },
+      "LegacyAppPathString": {
+        "type": "string"
       },
       "ListMcpServerStatusParams": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -14786,13 +14812,6 @@
                 },
                 "type": "array"
               },
-              "id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
-              },
               "metadata": {
                 "anyOf": [
                   {
@@ -14934,14 +14953,6 @@
                   "null"
                 ]
               },
-              "id": {
-                "description": "Legacy id field retained for compatibility with older payloads.",
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
-              },
               "metadata": {
                 "anyOf": [
                   {
@@ -14978,13 +14989,6 @@
               },
               "call_id": {
                 "type": "string"
-              },
-              "id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
               },
               "metadata": {
                 "anyOf": [
@@ -15033,13 +15037,6 @@
               },
               "execution": {
                 "type": "string"
-              },
-              "id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
               },
               "metadata": {
                 "anyOf": [
@@ -15111,13 +15108,6 @@
             "properties": {
               "call_id": {
                 "type": "string"
-              },
-              "id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
               },
               "input": {
                 "type": "string"
@@ -15255,13 +15245,6 @@
                   }
                 ]
               },
-              "id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "writeOnly": true
-              },
               "metadata": {
                 "anyOf": [
                   {
@@ -15295,7 +15278,11 @@
           {
             "properties": {
               "id": {
-                "type": "string"
+                "description": "Existing provider ID retained on serialized history for compatibility.",
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "metadata": {
                 "anyOf": [
@@ -15328,7 +15315,6 @@
               }
             },
             "required": [
-              "id",
               "result",
               "status",
               "type"
@@ -15444,6 +15430,12 @@
       },
       "ResponseItemMetadata": {
         "properties": {
+          "source_call_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "turn_id": {
             "type": [
               "string",
@@ -16641,6 +16633,14 @@
             "description": "Usually the first user message in the thread, if available.",
             "type": "string"
           },
+          "recencyAt": {
+            "description": "Unix timestamp (in seconds) used for thread recency ordering.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "sessionId": {
             "description": "Session id shared by threads that belong to the same session tree.",
             "type": "string"
@@ -17412,7 +17412,7 @@
               "cwd": {
                 "allOf": [
                   {
-                    "$ref": "#/definitions/v2/AbsolutePathBuf"
+                    "$ref": "#/definitions/v2/LegacyAppPathString"
                   }
                 ],
                 "description": "The command's working directory."
@@ -18900,7 +18900,8 @@
       "ThreadSortKey": {
         "enum": [
           "created_at",
-          "updated_at"
+          "updated_at",
+          "recency_at"
         ],
         "type": "string"
       },
@@ -19537,7 +19538,7 @@
       "TurnEnvironmentParams": {
         "properties": {
           "cwd": {
-            "$ref": "#/definitions/v2/AbsolutePathBuf"
+            "$ref": "#/definitions/v2/LegacyAppPathString"
           },
           "environmentId": {
             "type": "string"
