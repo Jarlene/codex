@@ -194,6 +194,9 @@ where
     fn run_agent<'a>(&'a self, request: AgentRunRequest) -> AgentRunnerFuture<'a> {
         Box::pin(async move {
             let mut config = self.config.clone();
+            codex_core::apply_agent_role_to_config(&mut config, request.agent_type.as_deref())
+                .await
+                .map_err(|err| format!("agent {} failed to apply role: {err}", request.label))?;
             if let Some(model) = request.model.as_ref() {
                 config.model = Some(model.clone());
             }
@@ -332,8 +335,13 @@ mod tests {
     use codex_extension_api::ExtensionData;
     use codex_extension_api::ExtensionRegistryBuilder;
     use codex_extension_api::ToolName;
+    use codex_protocol::openai_models::ReasoningEffort;
     use pretty_assertions::assert_eq;
+    use std::sync::Arc;
     use tempfile::tempdir;
+    use tokio::sync::Mutex;
+
+    use crate::runtime::AgentRunner;
 
     use super::*;
 
@@ -373,5 +381,64 @@ mod tests {
             .await;
         assert_eq!(fragments.len(), 1);
         assert!(fragments[0].text().contains(prompt::PROMPT_SNIPPET));
+    }
+
+    #[tokio::test]
+    async fn workflow_agent_type_applies_role_config_before_spawn() {
+        let codex_home = tempdir().expect("create temp codex home");
+        let mut config = ConfigBuilder::default()
+            .codex_home(codex_home.path().to_path_buf())
+            .build()
+            .await
+            .expect("build test config");
+        config.model_reasoning_effort = Some(ReasoningEffort::High);
+        let captured_config = Arc::new(Mutex::new(None));
+        let captured_config_for_spawner = Arc::clone(&captured_config);
+        let runner = WorkflowCodexAgentRunner {
+            agent_spawner: move |_thread_id: ThreadId,
+                                 options: StartThreadOptions|
+                  -> AgentSpawnFuture<'static, NewThread, CodexErr> {
+                let captured_config_for_spawner = Arc::clone(&captured_config_for_spawner);
+                Box::pin(async move {
+                    *captured_config_for_spawner.lock().await = Some(options.config);
+                    Err::<NewThread, CodexErr>(CodexErr::UnsupportedOperation(
+                        "test stop".to_string(),
+                    ))
+                })
+            },
+            forked_from_thread_id: ThreadId::default(),
+            config,
+            environments: Vec::new(),
+        };
+
+        let result = runner
+            .run_agent(AgentRunRequest {
+                prompt: "inspect architecture".to_string(),
+                label: "role check".to_string(),
+                phase: None,
+                schema: None,
+                instructions: None,
+                model: Some("gpt-explicit".to_string()),
+                agent_type: Some("architect".to_string()),
+            })
+            .await;
+
+        assert!(result.is_err());
+        let captured = captured_config
+            .lock()
+            .await
+            .clone()
+            .expect("spawner should receive config");
+        assert_eq!(captured.model.as_deref(), Some("gpt-explicit"));
+        assert_eq!(
+            captured.model_reasoning_effort,
+            Some(ReasoningEffort::Medium)
+        );
+        assert!(
+            captured
+                .developer_instructions
+                .as_deref()
+                .is_some_and(|instructions| instructions.contains("architecture-focused"))
+        );
     }
 }

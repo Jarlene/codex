@@ -346,6 +346,46 @@ Rules:
                         nickname_candidates: None,
                     }
                 ),
+                built_in_role(
+                    "architect",
+                    "Software architecture specialist for system design and technical decision-making.",
+                    "architect.toml",
+                ),
+                built_in_role(
+                    "coder",
+                    "Implementation specialist for writing clean, efficient code.",
+                    "coder.toml",
+                ),
+                built_in_role(
+                    "planner",
+                    "Planning specialist for complex features and refactoring.",
+                    "planner.toml",
+                ),
+                built_in_role(
+                    "critiquer",
+                    "Critique coordinator for comprehensive multi-perspective review.",
+                    "critiquer.toml",
+                ),
+                built_in_role(
+                    "requirement",
+                    "Requirements analysis specialist for clarifying and decomposing needs.",
+                    "requirement.toml",
+                ),
+                built_in_role(
+                    "researcher",
+                    "Research specialist for thorough investigation and synthesis.",
+                    "researcher.toml",
+                ),
+                built_in_role(
+                    "reviewer",
+                    "Code review specialist for quality, security, and maintainability.",
+                    "reviewer.toml",
+                ),
+                built_in_role(
+                    "tester",
+                    "QA specialist for test design and validation.",
+                    "tester.toml",
+                ),
                 // Awaiter is temp removed
 //                 (
 //                     "awaiter".to_string(),
@@ -369,13 +409,44 @@ Rules:
         &CONFIG
     }
 
+    fn built_in_role(
+        name: &str,
+        description: &str,
+        config_file: &str,
+    ) -> (String, AgentRoleConfig) {
+        (
+            name.to_string(),
+            AgentRoleConfig {
+                description: Some(description.to_string()),
+                config_file: Some(config_file.to_string().parse().unwrap_or_default()),
+                nickname_candidates: None,
+            },
+        )
+    }
+
     /// Resolves a built-in role `config_file` path to embedded content.
     pub(super) fn config_file_contents(path: &Path) -> Option<&'static str> {
         const EXPLORER: &str = include_str!("builtins/explorer.toml");
         const AWAITER: &str = include_str!("builtins/awaiter.toml");
+        const REQUIREMENT: &str = include_str!("builtins/requirement.toml");
+        const CODER: &str = include_str!("builtins/coder.toml");
+        const CRITIQUER: &str = include_str!("builtins/critiquer.toml");
+        const PLANNER: &str = include_str!("builtins/planner.toml");
+        const RESEARCHER: &str = include_str!("builtins/researcher.toml");
+        const TESTER: &str = include_str!("builtins/tester.toml");
+        const REVIEWER: &str = include_str!("builtins/reviewer.toml");
+        const ARCHITECT: &str = include_str!("builtins/architect.toml");
         match path.to_str()? {
             "explorer.toml" => Some(EXPLORER),
             "awaiter.toml" => Some(AWAITER),
+            "requirement.toml" => Some(REQUIREMENT),
+            "coder.toml" => Some(CODER),
+            "critiquer.toml" => Some(CRITIQUER),
+            "planner.toml" => Some(PLANNER),
+            "researcher.toml" => Some(RESEARCHER),
+            "tester.toml" => Some(TESTER),
+            "reviewer.toml" => Some(REVIEWER),
+            "architect.toml" => Some(ARCHITECT),
             _ => None,
         }
     }

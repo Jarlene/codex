@@ -119,6 +119,14 @@ pub use thread_manager::ThreadManager;
 pub use thread_manager::ThreadShutdownReport;
 pub use thread_manager::build_models_manager;
 pub use thread_manager::thread_store_from_config;
+
+pub async fn apply_agent_role_to_config(
+    config: &mut config::Config,
+    role_name: Option<&str>,
+) -> Result<(), String> {
+    agent::role::apply_role_to_config(config, role_name).await
+}
+
 pub use web_search::web_search_action_detail;
 pub use web_search::web_search_detail;
 pub use windows_sandbox_read_grants::grant_read_root_non_elevated;
