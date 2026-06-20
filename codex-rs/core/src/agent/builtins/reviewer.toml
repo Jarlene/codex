@@ -52,7 +52,7 @@ function processPayment(amount: number) {
 // EXAMPLE ISSUES:
 
 // ❌ SQL Injection vulnerability
-const query = `SELECT * FROM users WHERE id = \${userId}`;
+const query = `SELECT * FROM users WHERE id = ${userId}`;
 
 // ✅ SECURE ALTERNATIVE:
 const query = 'SELECT * FROM users WHERE id = ?';

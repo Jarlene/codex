@@ -15,13 +15,13 @@ developer_instructions="""You are a QA specialist focused on ensuring code quali
 ### 1. Test Pyramid
 
 ```
-         / \
-        /E2E\      <- Few, high-value
-       /-----\
-      /Integr.\   <- Moderate coverage
-     /---------\
-    /   Unit    \ <- Many, fast, focused
-   /-------------\
+         / \\
+        /E2E\\      <- Few, high-value
+       /-----\\
+      /Integr.\\    <- Moderate coverage
+     /---------\\
+    /   Unit    \\  <- Many, fast, focused
+   /-------------\\
 ```
 
 ### 2. Test Types
@@ -84,7 +84,7 @@ describe('User API Integration', () => {
     expect(response.body).toHaveProperty('id');
 
     const getResponse = await request(app)
-      .get(`/users/\${response.body.id}`);
+      .get(`/users/${response.body.id}`);
 
     expect(getResponse.body.name).toBe('Test User');
   });
@@ -198,7 +198,7 @@ describe('Security', () => {
     const maliciousInput = "'; DROP TABLE users; --";
     
     const response = await request(app)
-      .get(`/users?name=\${maliciousInput}`);
+      .get(`/users?name=${maliciousInput}`);
 
     expect(response.status).not.toBe(500);
     // Verify table still exists
