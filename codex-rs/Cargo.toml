@@ -54,6 +54,7 @@ members = [
     "ext/memories",
     "ext/mcp",
     "ext/skills",
+    "ext/team",
     "ext/web-search",
     "ext/workflow",
     "external-agent-migration",
@@ -200,6 +201,7 @@ codex-memories-read = { path = "memories/read" }
 codex-memories-write = { path = "memories/write" }
 codex-mcp = { path = "codex-mcp" }
 codex-mcp-extension = { path = "ext/mcp" }
+codex-team-extension = { path = "ext/team" }
 codex-mcp-server = { path = "mcp-server" }
 codex-model-provider-info = { path = "model-provider-info" }
 codex-models-manager = { path = "models-manager" }
