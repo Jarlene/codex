@@ -2008,6 +2008,7 @@ dependencies = [
  "codex-shell-command",
  "codex-skills-extension",
  "codex-state",
+ "codex-team-extension",
  "codex-thread-store",
  "codex-tools",
  "codex-utils-absolute-path",
@@ -3935,6 +3936,28 @@ dependencies = [
  "pretty_assertions",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "codex-team-extension"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "codex-core",
+ "codex-extension-api",
+ "codex-protocol",
+ "codex-tools",
+ "codex-utils-output-truncation",
+ "codex-utils-path",
+ "futures",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

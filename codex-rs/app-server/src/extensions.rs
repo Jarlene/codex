@@ -80,7 +80,11 @@ where
     codex_image_generation_extension::install(&mut builder, auth_manager);
     codex_workflow_extension::install(
         &mut builder,
-        codex_workflow_extension::workflow_agent_spawner(thread_manager),
+        codex_workflow_extension::workflow_agent_spawner(thread_manager.clone()),
+    );
+    codex_team_extension::install(
+        &mut builder,
+        codex_team_extension::team_agent_spawner(thread_manager),
     );
     let skill_providers = codex_skills_extension::SkillProviders::new()
         .with_executor_provider(executor_skill_provider)

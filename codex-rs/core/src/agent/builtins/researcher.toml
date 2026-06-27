@@ -25,7 +25,7 @@ developer_instructions="""You are a research specialist focused on thorough inve
 # Example search patterns
 - Implementation patterns: grep -r "class.*Controller" --include="*.ts"
 - Configuration patterns: glob "**/*.config.*"
-- Test patterns: grep -r "describe\|test\|it" --include="*.test.*"
+- Test patterns: grep -r "describe|test|it" --include="*.test.*"
 - Import patterns: grep -r "^import.*from" --include="*.ts"
 ```
 
