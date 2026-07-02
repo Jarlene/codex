@@ -26,6 +26,7 @@ use crate::CostEstimate;
 use crate::CreateTeamRequest;
 use crate::FsTeamStore;
 use crate::HeuristicTaskDecomposer;
+use crate::MessageId;
 use crate::MessagePayload;
 use crate::MessageRecipient;
 use crate::MessageType;
@@ -1335,6 +1336,273 @@ fn object_array_schema() -> JsonValue {
     json!({ "type": "array", "items": { "type": "object" } })
 }
 
+// ---------------------------------------------------------------------------
+// TeamMemberTool — restricted tool exposed to sub-agent teammates
+// ---------------------------------------------------------------------------
+
+const MEMBER_TOOL_NAME: &str = "team_member";
+const MEMBER_TOOL_DESCRIPTION: &str = "Communicate with your team via the shared mailbox. Check your inbox, send messages to the lead or broadcast to all teammates, and manage message lifecycle.";
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "action", rename_all = "snake_case")]
+#[allow(dead_code)]
+enum TeamMemberToolInput {
+    Status,
+    ReadTask {
+        task_id: TaskId,
+    },
+    ListTasks,
+    SendMessage {
+        to: MessageRecipient,
+        #[serde(default)]
+        message_type: Option<MessageType>,
+        payload: MessagePayload,
+        #[serde(default)]
+        ack_required: Option<bool>,
+        #[serde(default)]
+        now: Option<i64>,
+    },
+    ConsumeMessage {
+        #[serde(default)]
+        now: Option<i64>,
+    },
+    FinishMessage {
+        message_id: MessageId,
+        success: bool,
+        #[serde(default)]
+        now: Option<i64>,
+    },
+    RouteMessages {
+        #[serde(default)]
+        max_attempts: Option<u32>,
+        #[serde(default)]
+        now: Option<i64>,
+    },
+    MailboxList,
+    RecoverMessages {
+        #[serde(default)]
+        now: Option<i64>,
+    },
+    SummarizeInbox {
+        #[serde(default)]
+        now: Option<i64>,
+    },
+}
+
+#[allow(dead_code)]
+fn parse_member_args(call: &ToolCall) -> Result<TeamMemberToolInput, FunctionCallError> {
+    serde_json::from_str(call.function_arguments()?)
+        .map_err(|err| FunctionCallError::RespondToModel(err.to_string()))
+}
+
+fn team_member_tool_schema() -> JsonValue {
+    let actions = vec![
+        "status",
+        "read_task",
+        "list_tasks",
+        "send_message",
+        "consume_message",
+        "finish_message",
+        "route_messages",
+        "mailbox_list",
+        "recover_messages",
+        "summarize_inbox",
+    ];
+    let mut properties = JsonMap::new();
+    properties.insert(
+        "action".to_string(),
+        json!({
+            "type": "string",
+            "enum": actions,
+            "description": "Team member operation to execute."
+        }),
+    );
+    for (name, value) in [
+        ("task_id", json!({ "type": "string" })),
+        (
+            "to",
+            json!({ "description": "Recipient: {\"agent\":\"id\"} for a specific teammate/lead, or \"broadcast\" for everyone." }),
+        ),
+        ("message_type", json!({ "type": "string" })),
+        ("payload", json!({ "type": "object" })),
+        ("ack_required", json!({ "type": "boolean" })),
+        ("message_id", json!({ "type": "string" })),
+        ("success", json!({ "type": "boolean" })),
+        ("max_attempts", json!({ "type": "integer", "minimum": 1 })),
+        ("now", json!({ "type": "integer" })),
+    ] {
+        properties.insert(name.to_string(), value);
+    }
+    let mut schema = JsonMap::new();
+    schema.insert("type".to_string(), json!("object"));
+    schema.insert("properties".to_string(), JsonValue::Object(properties));
+    schema.insert("required".to_string(), json!(["action"]));
+    schema.insert("additionalProperties".to_string(), json!(false));
+    JsonValue::Object(schema)
+}
+
+/// A restricted team tool for sub-agent members.
+///
+/// Only exposes communication and read-only actions. The agent_id is fixed
+/// at construction so members cannot impersonate other agents.
+///
+/// Note: currently unused because the extension system shares tools across all
+/// threads in a session and `dynamic_tools` only accepts spec-level descriptors
+/// (not in-process executors). This struct is kept for when per-thread tool
+/// injection becomes available, or when a future refactor adds a dedicated
+/// sub-agent extension path.
+#[derive(Clone)]
+#[allow(dead_code)]
+pub(crate) struct TeamMemberTool {
+    runtime: TeamRuntime,
+    team_id: TeamId,
+    agent_id: AgentId,
+}
+
+impl TeamMemberTool {
+    #[allow(dead_code)]
+    pub(crate) fn new(store: FsTeamStore, team_id: TeamId, agent_id: AgentId) -> Self {
+        Self {
+            runtime: TeamRuntime::new(store),
+            team_id,
+            agent_id,
+        }
+    }
+
+    #[allow(dead_code)]
+    async fn handle_call(&self, call: ToolCall) -> Result<Box<dyn ToolOutput>, FunctionCallError> {
+        let input = parse_member_args(&call)?;
+        let mut handle = self.runtime.load_team(&self.team_id).map_err(tool_error)?;
+        let now = now_unix_timestamp_secs();
+        let output = match input {
+            TeamMemberToolInput::Status => team_summary_json(handle.team()),
+            TeamMemberToolInput::ReadTask { task_id } => {
+                let task = handle.team().tasks.get(&task_id).cloned();
+                json!({ "task": task })
+            }
+            TeamMemberToolInput::ListTasks => {
+                let tasks: Vec<_> = handle.team().tasks.values().collect();
+                json!({ "tasks": tasks })
+            }
+            TeamMemberToolInput::SendMessage {
+                to,
+                message_type,
+                payload,
+                ack_required,
+                now: input_now,
+            } => {
+                let ts = input_now.unwrap_or(now);
+                let message_id = handle.send_message(
+                    &self.agent_id,
+                    to,
+                    message_type.unwrap_or(MessageType::Message),
+                    payload,
+                    ack_required.unwrap_or(false),
+                    ts,
+                )?;
+                let delivered = handle.route_pending_messages(/*max_attempts*/ 3, ts)?;
+                json!({ "message_id": message_id, "delivered": delivered })
+            }
+            TeamMemberToolInput::ConsumeMessage { now: input_now } => {
+                let ts = input_now.unwrap_or(now);
+                let message = handle
+                    .consume_next_message(&self.agent_id, ts)
+                    .map_err(tool_error)?;
+                json!({ "message": message })
+            }
+            TeamMemberToolInput::FinishMessage {
+                message_id,
+                success,
+                now: input_now,
+            } => {
+                let ts = input_now.unwrap_or(now);
+                handle
+                    .finish_message(&self.agent_id, &message_id, success, ts)
+                    .map_err(tool_error)?;
+                json!({ "ok": true })
+            }
+            TeamMemberToolInput::RouteMessages {
+                max_attempts,
+                now: input_now,
+            } => {
+                let ts = input_now.unwrap_or(now);
+                let delivered = handle.route_pending_messages(max_attempts.unwrap_or(3), ts)?;
+                json!({ "delivered": delivered })
+            }
+            TeamMemberToolInput::MailboxList => {
+                let inbox = handle.team().mailbox.inboxes.get(&self.agent_id);
+                let messages = inbox
+                    .map(|inbox| {
+                        let unread: Vec<_> = inbox
+                            .unread
+                            .iter()
+                            .map(|id| json!({ "id": id, "state": "unread" }))
+                            .collect();
+                        let processing: Vec<_> = inbox
+                            .processing
+                            .iter()
+                            .map(|id| json!({ "id": id, "state": "processing" }))
+                            .collect();
+                        let processed: Vec<_> = inbox
+                            .processed
+                            .iter()
+                            .map(|id| json!({ "id": id, "state": "processed" }))
+                            .collect();
+                        [unread, processing, processed].concat()
+                    })
+                    .unwrap_or_default();
+                json!({ "messages": messages, "count": messages.len() })
+            }
+            TeamMemberToolInput::RecoverMessages { now: input_now } => {
+                let ts = input_now.unwrap_or(now);
+                let recovered = handle
+                    .recover_processing_messages(&self.agent_id, ts)
+                    .map_err(tool_error)?;
+                json!({ "recovered": recovered })
+            }
+            TeamMemberToolInput::SummarizeInbox { now: input_now } => {
+                let ts = input_now.unwrap_or(now);
+                let summarized = handle
+                    .summarize_inbox_if_needed(&self.agent_id, ts)
+                    .map_err(tool_error)?;
+                json!({ "summarized": summarized })
+            }
+        };
+        Ok(Box::new(JsonToolOutput::new(output)))
+    }
+}
+
+#[allow(dead_code)]
+impl ToolExecutor<ToolCall> for TeamMemberTool {
+    fn tool_name(&self) -> ToolName {
+        ToolName::plain(MEMBER_TOOL_NAME)
+    }
+
+    fn spec(&self) -> ToolSpec {
+        ToolSpec::Function(ResponsesApiTool {
+            name: MEMBER_TOOL_NAME.to_string(),
+            description: MEMBER_TOOL_DESCRIPTION.to_string(),
+            strict: false,
+            defer_loading: None,
+            parameters: parse_tool_input_schema_without_compaction(&team_member_tool_schema())
+                .unwrap_or_else(|err| panic!("team member schema should parse: {err}")),
+            output_schema: None,
+        })
+    }
+
+    fn exposure(&self) -> ToolExposure {
+        ToolExposure::Direct
+    }
+
+    fn supports_parallel_tool_calls(&self) -> bool {
+        false
+    }
+
+    fn handle(&self, call: ToolCall) -> ToolExecutorFuture<'_> {
+        Box::pin(self.handle_call(call))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
@@ -1352,6 +1620,25 @@ mod tests {
         assert!(actions.contains(&json!("release_task_claim")));
         assert!(actions.contains(&json!("mailbox_list")));
         assert!(actions.contains(&json!("get_summary")));
+        assert_eq!(schema["required"], json!(["action"]));
+    }
+
+    #[test]
+    fn member_schema_lists_communication_actions() {
+        let schema = team_member_tool_schema();
+        let actions = schema["properties"]["action"]["enum"]
+            .as_array()
+            .expect("action enum");
+        assert!(actions.contains(&json!("send_message")));
+        assert!(actions.contains(&json!("consume_message")));
+        assert!(actions.contains(&json!("finish_message")));
+        assert!(actions.contains(&json!("route_messages")));
+        assert!(actions.contains(&json!("status")));
+        assert!(actions.contains(&json!("read_task")));
+        assert!(actions.contains(&json!("list_tasks")));
+        assert!(!actions.contains(&json!("run_ready_tasks")));
+        assert!(!actions.contains(&json!("request_shutdown")));
+        assert!(!actions.contains(&json!("create")));
         assert_eq!(schema["required"], json!(["action"]));
     }
 }

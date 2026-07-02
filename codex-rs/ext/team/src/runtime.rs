@@ -284,9 +284,10 @@ impl TeamRuntimeHandle {
             .map(new_task_from_task)
             .collect::<Vec<_>>();
         if let Some(candidate) = all_tasks.iter_mut().find(|task| &task.id == task_id)
-            && let Some(dependencies) = &update.dependencies {
-                candidate.dependencies.clone_from(dependencies);
-            }
+            && let Some(dependencies) = &update.dependencies
+        {
+            candidate.dependencies.clone_from(dependencies);
+        }
         validate_new_tasks(&all_tasks)?;
 
         let task = self
@@ -1157,6 +1158,8 @@ impl TeamRuntimeHandle {
         runner: Arc<dyn TeammateRunner>,
         now: i64,
     ) -> Result<Vec<TeammateRunResult>, TeamError> {
+        // Route any pending messages so members see communications before starting.
+        self.route_pending_messages(/*max_attempts*/ 3, now)?;
         let assignments = self.dispatch_ready_tasks(now)?;
         let team_id = self.team.id.clone();
         let requests = assignments

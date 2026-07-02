@@ -201,6 +201,7 @@ where
                         request.agent_id
                     ))
                 })?;
+
             let prompt = build_teammate_prompt(&request);
             let new_thread = self
                 .agent_spawner
@@ -270,6 +271,33 @@ fn build_teammate_prompt(request: &TeammateRunRequest) -> String {
         parts.push(format!("Role hint: {role:?}."));
     }
     parts.push("Work in an isolated context. Do not assume access to the lead's hidden conversation beyond this prompt.".to_string());
+
+    // Communication instructions using the existing `team` tool
+    parts.push(
+        "Your team has a shared mailbox system. The `team` tool is available for communication.\n\
+        \n\
+        SAFE actions you may use:\n\
+        - `send_message`: send a message to the lead or broadcast to the team\n\
+        - `consume_message`: read your next unread message\n\
+        - `finish_message`: mark a message as processed\n\
+        - `route_messages`: deliver pending messages to recipients\n\
+        - `mailbox_list`: check your inbox\n\
+        - `recover_messages`: recover stuck processing messages\n\
+        - `summarize_inbox`: compress your inbox\n\
+        - `status`: view team status (tasks, members)\n\
+        - `read_task`: view a specific task's details\n\
+        - `list_tasks`: list all tasks\n\
+        \n\
+        NEVER use these administrative actions:\n\
+        `create`, `add_task`, `update_task`, `claim_task`, `transition_task_status`,\n\
+        `release_task_claim`, `reclaim_expired_task_claim`, `complete_task`,\n\
+        `request_plan`, `review_plan`, `run_ready_tasks`, `request_shutdown`,\n\
+        `mark_stopped`, `cleanup`, `scheduler_decision`, `decompose`, `recommend_size`.\n\
+        \n\
+        Stay in communication: report progress, ask questions, share blockers."
+            .to_string(),
+    );
+
     parts.push(format!("Task id: {}", request.task.id));
     parts.push(format!("Title: {}", request.task.title));
     parts.push(format!("Description:\n{}", request.task.description));
